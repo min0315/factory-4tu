@@ -1,0 +1,2 @@
+﻿throughput,defect_count,defect_rate,avg_cycle_time,median_cycle_time,max_cycle_time,avg_wip,total_cost,sim_duration_min,real_case_count,common_routing
+244,13,0.0533,1016.2715,956.986,2824.8905,1.9563,165612553.1758,127000,225,Turning_Milling -> QC_Turning -> Laser_Marking -> Lapping -> Round_Grinding -> Final_Inspection -> Packing

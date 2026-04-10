@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>4TU Production Simulation</title>
+  <style>
+    :root {
+      --bg-1: #08131f;
+      --bg-2: #0f2233;
+      --panel: rgba(6, 16, 24, 0.82);
+      --line: rgba(255,255,255,0.14);
+      --text: #edf6ff;
+      --muted: #9cb4c7;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      overflow: hidden;
+      color: var(--text);
+      font-family: AppleGothic, "Malgun Gothic", sans-serif;
+      background:
+        radial-gradient(circle at 12% 18%, rgba(88,166,255,0.18), transparent 26%),
+        radial-gradient(circle at 85% 12%, rgba(255,123,114,0.14), transparent 24%),
+        linear-gradient(145deg, var(--bg-1), var(--bg-2));
+    }
+    #scene { width: 100vw; height: 100vh; }
+    .panel {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      width: 360px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
+    }
+    .panel h1 {
+      margin: 0 0 8px;
+      font-size: 22px;
+    }
+    .sub {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .kpi {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 6px 10px;
+      margin: 10px 0;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--line);
+      font-size: 14px;
+    }
+    .kpi span:first-child { color: var(--muted); }
+    .legend {
+      position: fixed;
+      left: 18px;
+      bottom: 18px;
+      width: 420px;
+      max-width: calc(100vw - 36px);
+      padding: 16px 18px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(8, 19, 31, 0.78);
+      backdrop-filter: blur(14px);
+    }
+    .legend h2 {
+      margin: 0 0 10px;
+      font-size: 15px;
+    }
+    .legend-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 12px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text);
+    }
+    .dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      flex: 0 0 auto;
+    }
+    @media (max-width: 900px) {
+      .panel {
+        top: 12px;
+        left: 12px;
+        right: 12px;
+        width: auto;
+      }
+      .legend {
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        width: auto;
+      }
+      .legend-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="scene"></div>
+  <aside class="panel">
+    <h1>4TU Production Simulation</h1>
+    <p class="sub">대표 라우팅: Turning_Milling → QC_Turning → Laser_Marking → Lapping → Round_Grinding → Final_Inspection → Packing</p>
+    <div class="kpi"><span>실측 케이스 수</span><strong>225</strong></div>
+    <div class="kpi"><span>시뮬 시작 케이스 수</span><strong>246</strong></div>
+    <div class="kpi"><span>시뮬 완료 케이스 수</span><strong>244</strong></div>
+    <div class="kpi"><span>실측 평균 도착간격</span><strong>567.5분</strong></div>
+    <div class="kpi"><span>시뮬 평균 사이클 타임</span><strong>1016.3분</strong></div>
+    <div class="kpi"><span>시뮬 평균 WIP</span><strong>2.0</strong></div>
+    <div class="kpi"><span>시뮬 총 불량률</span><strong>5.33%</strong></div>
+  </aside>
+  <section class="legend">
+    <h2>공정 스테이션</h2>
+    <div class="legend-grid" id="legend-grid"></div>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script>
+    const stations = [{"name": "Turning_Milling", "color": "#58a6ff", "machines": 8, "simAvg": 319.0805, "realAvg": 299.4001, "simDefect": 0.41, "realDefect": 0.17, "throughput": 246}, {"name": "QC_Turning", "color": "#f0883e", "machines": 1, "simAvg": 94.5463, "realAvg": 91.2808, "simDefect": 2.45, "realDefect": 1.68, "throughput": 245}, {"name": "Lapping", "color": "#3fb950", "machines": 2, "simAvg": 100.0832, "realAvg": 106.5405, "simDefect": 0.0, "realDefect": 0.05, "throughput": 244}, {"name": "Round_Grinding", "color": "#bc8cff", "machines": 7, "simAvg": 193.9416, "realAvg": 216.1602, "simDefect": 0.41, "realDefect": 0.46, "throughput": 244}, {"name": "Flat_Grinding", "color": "#79c0ff", "machines": 2, "simAvg": 0.0, "realAvg": 95.0439, "simDefect": 0.0, "realDefect": 0.07, "throughput": 0}, {"name": "Laser_Marking", "color": "#ff7b72", "machines": 1, "simAvg": 57.0072, "realAvg": 57.7619, "simDefect": 0.0, "realDefect": 0.11, "throughput": 245}, {"name": "Final_Inspection", "color": "#d29922", "machines": 1, "simAvg": 126.156, "realAvg": 114.7332, "simDefect": 2.05, "realDefect": 1.9, "throughput": 244}, {"name": "Packing", "color": "#56d364", "machines": 1, "simAvg": 60.0, "realAvg": 60.0, "simDefect": 0.0, "realDefect": 0.0, "throughput": 244}];
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(52, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(window.devicePixelRatio || 1);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById("scene").appendChild(renderer.domElement);
+
+    camera.position.set(0, 18, 38);
+    camera.lookAt(0, 0, 0);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+    const light = new THREE.DirectionalLight(0xffffff, 1.3);
+    light.position.set(8, 18, 10);
+    scene.add(light);
+
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(90, 34),
+      new THREE.MeshPhongMaterial({ color: 0x112132, shininess: 28 })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -2.4;
+    scene.add(floor);
+
+    const lane = new THREE.Mesh(
+      new THREE.PlaneGeometry(82, 6),
+      new THREE.MeshBasicMaterial({ color: 0x1d3a53, transparent: true, opacity: 0.55 })
+    );
+    lane.rotation.x = -Math.PI / 2;
+    lane.position.set(0, -2.35, 0);
+    scene.add(lane);
+
+    const meshes = [];
+    stations.forEach((station, index) => {
+      const x = -31 + index * 9;
+      const height = 2.8 + (station.machines * 0.8);
+      const base = new THREE.Mesh(
+        new THREE.CylinderGeometry(3.2, 3.6, 0.9, 32),
+        new THREE.MeshPhongMaterial({ color: 0x203446 })
+      );
+      base.position.set(x, -1.95, 0);
+      scene.add(base);
+
+      const tower = new THREE.Mesh(
+        new THREE.BoxGeometry(4.8, height, 4.8),
+        new THREE.MeshPhongMaterial({
+          color: station.color,
+          emissive: station.color,
+          emissiveIntensity: 0.18,
+          shininess: 48
+        })
+      );
+      tower.position.set(x, height / 2 - 1.5, 0);
+      scene.add(tower);
+      meshes.push({ mesh: tower, offset: index * 0.6 });
+    });
+
+    const productDots = [];
+    for (let i = 0; i < 28; i += 1) {
+      const dot = new THREE.Mesh(
+        new THREE.SphereGeometry(0.25, 18, 18),
+        new THREE.MeshBasicMaterial({ color: 0xf0f6fc })
+      );
+      dot.position.set(-36 + i * 2.8, -1.2 + (i % 3) * 0.18, 0);
+      scene.add(dot);
+      productDots.push({ mesh: dot, speed: 0.045 + (i % 5) * 0.008 });
+    }
+
+    const legendGrid = document.getElementById("legend-grid");
+    legendGrid.innerHTML = stations.map((station) => `
+      <div class="legend-item">
+        <span class="dot" style="background:${station.color}"></span>
+        <span>${station.name} | 실측 ${station.realAvg.toFixed(1)}분 / 시뮬 ${station.simAvg.toFixed(1)}분</span>
+      </div>
+    `).join("");
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const t = performance.now() * 0.001;
+      meshes.forEach(({ mesh, offset }) => {
+        mesh.rotation.y += 0.006;
+        mesh.position.y = Math.sin(t + offset) * 0.22 + mesh.geometry.parameters.height / 2 - 1.5;
+      });
+      productDots.forEach((item, idx) => {
+        item.mesh.position.x += item.speed;
+        item.mesh.position.z = Math.sin(t * 2 + idx) * 1.1;
+        if (item.mesh.position.x > 36) item.mesh.position.x = -36;
+      });
+      scene.rotation.y = Math.sin(t * 0.22) * 0.05;
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>

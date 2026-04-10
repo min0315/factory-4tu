@@ -1,0 +1,9 @@
+﻿process_name,completed,avg_wait_time_min,avg_process_time_min,defect_rate,avg_queue_length,real_mean_min,real_defect_rate,real_throughput_rows
+Final_Inspection,244,37.9282,126.156,0.0205,0.0322,114.7332,0.019,551
+Flat_Grinding,0,0,0,0,0,95.0439,0.0007,114
+Lapping,244,0.6128,100.0832,0.0,0.0,106.5405,0.0005,370
+Laser_Marking,245,4.6273,57.0072,0.0,0.0016,57.7619,0.0011,252
+Packing,244,2.2054,60.0,0.0,0.0,60.0,0.0,277
+QC_Turning,245,18.6377,94.5463,0.0245,0.0095,91.2808,0.0168,577
+Round_Grinding,244,0.0,193.9416,0.0041,0.0,216.1602,0.0046,774
+Turning_Milling,246,0.0,319.0805,0.0041,0.0,299.4001,0.0017,1402
